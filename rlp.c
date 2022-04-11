@@ -129,7 +129,6 @@ char* convert_be(size_t* size, unsigned long long int val)
 char* s(size_t* size, rlp_struct* root)
 {    
     char* output = (char*) malloc(sizeof(char*));
-    char* list_head = output;
     rlp_struct* tmp = root;
     while (tmp) {
         tmp = tmp->next;
@@ -137,10 +136,9 @@ char* s(size_t* size, rlp_struct* root)
             size_t tmp_size = 0;
             char* rlp_output = rlp_encode(&tmp_size, tmp);
             if (rlp_output) {
+                output = (char*) realloc(output, *size + tmp_size);
+                memcpy(output+*size, rlp_output, tmp_size);
                 *size = *size + tmp_size;
-                output = (char*) realloc(output, *size);
-                memcpy(list_head, rlp_output, tmp_size);
-                list_head += tmp_size;
             } else {
                 return 0;
             }
@@ -164,7 +162,7 @@ char* r_b(size_t* output_size, rlp_struct* root)
         memcpy(output+1, root->data, size);
         return output;
     } else if (size >= 56 && size < 0xffffffff) {
-        size_t be_size_arr_len;
+        size_t be_size_arr_len = 0;
         char* be_size_arr = convert_be(&be_size_arr_len, size);
         *output_size = size+be_size_arr_len+1;
         char* output = (char*) malloc(*output_size);
@@ -190,7 +188,7 @@ char* r_l(size_t* output_size, rlp_struct* root)
             return output;
         } else if (size >= 56 && size < 0xffffffff) {
             char* s_output = s(output_size, root);
-            size_t be_size_arr_len;
+            size_t be_size_arr_len = 0;
             char* be_size_arr = convert_be(&be_size_arr_len, *output_size);
             char* output = (char*) malloc(*output_size+be_size_arr_len+1);
             output[0] = 247 + be_size_arr_len;

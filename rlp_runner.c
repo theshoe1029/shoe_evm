@@ -131,5 +131,13 @@ int main(int argc, char** argv)
     output = rlp_encode(&output_size, l1);
     print_rlp_list(rlp_decode(&decoded_size, output));
     printf("\n");
+
+    rlp_struct* l11 = new_rlp_list();
+    rlp_struct* s9 = new_rlp_str(56, "Lorem ipsum dolor sit amet, consectetur adipisicing elit");
+    rlp_list_add(l11, s9);
+    output_size = 0;
+    output = rlp_encode(&output_size, l11);
+    for (int i = 0; i < output_size; i++) printf("%x ", output[i]);
+    printf("\n");
     return 0;
 }
