@@ -27,5 +27,6 @@ void get_be_size(size_t* size, unsigned long long int val);
 char* r_b(size_t* size, rlp_struct* root);
 char* r_c(size_t* size, rlp_struct* root);
 char* rlp_encode(size_t* size, rlp_struct* val);
+rlp_struct* rlp_decode(size_t* decoded_size, char* rlp_data);
 
 #endif

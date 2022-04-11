@@ -66,8 +66,12 @@ size_t get_rlp_list_size(rlp_struct* root)
 }
 
 void print_rlp_str(rlp_struct* str)
-{
-    printf("%s", str->data);
+{    
+    if (str->size == 1) {
+        str->data[0] & ~0x7f == 0 ? printf("%c", str->data[0]) : printf("%x", str->data[0]);        
+    } else {
+        printf("%s", str->data);
+    }
     if (str->next) {
         printf(", ");
     }
@@ -211,5 +215,48 @@ char* rlp_encode(size_t* size, rlp_struct* val)
             return rlp_encode(size, val);
         case LIST:
             return r_l(size, val->sub_arr);
+    }
+}
+
+rlp_struct* rlp_decode(size_t* decoded_size, char* rlp_data)
+{
+    unsigned char type = rlp_data[0];    
+    if (type < 0x80) {
+        *decoded_size += 1;
+        return new_rlp_str(1, rlp_data);
+    } else if (type >= 0x80 && type < 0xb8) {
+        size_t str_len = type - 0x80;
+        char* output = (char*) malloc(str_len);
+        memcpy(output, rlp_data+1, str_len);
+        *decoded_size += str_len + 1;
+        return new_rlp_str(str_len, output);
+    } else if (type >= 0xb8 && type < 0xc0) {
+        size_t str_len_len = type - 0xb7;
+        size_t str_len = 0;
+        memcpy(&str_len, rlp_data+1, str_len_len);
+        char* output = (char*) malloc(str_len);
+        memcpy(output, rlp_data+1+str_len_len, str_len);
+        *decoded_size += str_len_len + str_len + 1;
+        return new_rlp_str(str_len, output);
+    } else if (type >= 0xc0 && type < 0xf8) {
+        size_t list_len = type - 0xc0;
+        size_t total_decoded = 0;
+        rlp_struct* list = new_rlp_list();
+        while (total_decoded < list_len) {
+            rlp_list_add(list, rlp_decode(&total_decoded, rlp_data+1+total_decoded));
+        }
+        *decoded_size += list_len + 1;
+        return list;
+    } else {
+        size_t list_len_len = type - 0xf7;
+        size_t list_len = 0;
+        memcpy(&list_len, rlp_data+1, list_len_len);
+        size_t total_decoded = 0;
+        rlp_struct* list = new_rlp_list();
+        while (total_decoded < list_len) {
+            rlp_list_add(list, rlp_decode(&total_decoded, rlp_data+1+list_len_len+total_decoded));            
+        }
+        *decoded_size += list_len_len + list_len + 1;
+        return list;
     }
 }

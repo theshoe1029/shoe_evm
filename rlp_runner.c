@@ -106,5 +106,30 @@ int main(int argc, char** argv)
     output = rlp_encode(&output_size, l9);
     for (int i = 0; i < output_size; i++) printf("%x ", output[i]);
     printf("\n");
+
+    unsigned long long int decoded_size;
+
+    output_size = 3;
+    print_rlp_str(rlp_decode(&decoded_size, rlp_encode(&output_size, s6)));
+    printf("\n");
+
+    output_size = 56;
+    print_rlp_str(rlp_decode(&decoded_size, rlp_encode(&output_size, s5)));
+    printf("\n");
+
+    output_size = 0;
+    output = rlp_encode(&output_size, root2);
+    print_rlp_list(rlp_decode(&decoded_size, output));
+    printf("\n");
+
+    output_size = 0;
+    output = rlp_encode(&output_size, l9);
+    print_rlp_list(rlp_decode(&decoded_size, output));
+    printf("\n");
+
+    output_size = 0;
+    output = rlp_encode(&output_size, l1);
+    print_rlp_list(rlp_decode(&decoded_size, output));
+    printf("\n");
     return 0;
 }
