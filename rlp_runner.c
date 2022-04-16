@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "rlp.h"
+#include "include/rlp.h"
 
 int main(int argc, char** argv) 
 {    

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "keccak256.h"
+#include "include/keccak256.h"
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -107,7 +107,7 @@ void keccak_f_1600(void* state)
     }    
 }
 
-void keccak_256(unsigned char* input, unsigned char* output)
+unsigned char* keccak_256(unsigned char* input)
 {
     // 200*8 = 1600 bits for Keccac-f(1600)
     uint8_t state[200];
@@ -117,6 +117,8 @@ void keccak_256(unsigned char* input, unsigned char* output)
     size_t input_byte_len = strlen(input);
     // 256 bits
     size_t output_byte_len = 32;
+    unsigned char* output = (unsigned char*) malloc(output_byte_len);
+    unsigned char* output_head = output;
 
     // rate (1088) and capacity (512) sum to 1600 for Keccak-f(1600)
     unsigned int rate = 1088; unsigned int rate_in_bytes = rate / 8;
@@ -148,12 +150,14 @@ void keccak_256(unsigned char* input, unsigned char* output)
 
     while(output_byte_len > 0) {
         block_size = MIN(output_byte_len, rate_in_bytes);
-        memcpy(output, state, block_size);
-        output += block_size;
+        memcpy(output_head, state, block_size);
+        output_head += block_size;
         output_byte_len -= block_size;
 
         if (output_byte_len > 0) {
             keccak_f_1600(state);
         }
-    }    
+    }
+
+    return output;
 }

@@ -3,6 +3,6 @@
 #ifndef KECCAK_256_H_
 #define KECCAK_256_H_
 
-void keccak_256(unsigned char* input, unsigned char* output);
+unsigned char* keccak_256(unsigned char* input);
 
 #endif

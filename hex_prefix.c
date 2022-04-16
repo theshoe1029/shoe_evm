@@ -27,11 +27,6 @@ unsigned char* hp_encode(size_t arr_size, nibble* arr, unsigned int t, size_t* o
     return output;
 }
 
-nibble byte_to_nibble(unsigned char byte)
-{
-    (nibble) {.first=(byte&0xf0)>>2, .second=byte&0x0f};
-}
-
 nibble* hp_decode(size_t arr_size, unsigned char* arr, size_t* output_size)
 {
     nibble header = byte_to_nibble(arr[0]);
@@ -51,11 +46,4 @@ nibble* hp_decode(size_t arr_size, unsigned char* arr, size_t* output_size)
         }
     }
     return nibbles;
-}
-
-void print_nibble_arr(size_t arr_size, nibble* arr)
-{
-    for (int i = 0; i < arr_size; i++) {
-        printf("first: %x, second: %x\n", arr[i].first, arr[i].second);
-    }    
 }

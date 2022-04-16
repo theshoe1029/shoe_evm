@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "keccak256.h"
+#include "include/keccak256.h"
 
 int main(int argc, char** argv) 
 {    
@@ -18,8 +18,8 @@ int main(int argc, char** argv)
         }        
     }
 
-    unsigned char output[32];
-    keccak_256(input, output);
+    unsigned char* output = keccak_256(input);
+    printf("%p\n", output);
     for (size_t i = 0; i < 32; ++i) printf("%02x", output[i]);
     printf("\n");
     return 0;

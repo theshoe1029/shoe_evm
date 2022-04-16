@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "hex_prefix.h"
+#include "include/hex_prefix.h"
 
 int main(int argc, char** argv) 
 {    
