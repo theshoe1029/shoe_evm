@@ -1,6 +1,7 @@
+main:
+	gcc -I ./include hex_prefix.c rlp.c keccak256.c trie.c evm.c main.c -o main
 keccak:
 	gcc keccak256.c keccak256_runner.c -o keccak256
-
 rlp:
 	gcc rlp.c rlp_runner.c -o rlp
 hp:
@@ -11,6 +12,7 @@ leveldb:
 	git clone --recurse-submodules https://github.com/google/leveldb.git && cd leveldb && mkdir -p build && cd build
 	cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
 clean:
+	rm -rf main
 	rm -rf keccak256
 	rm -rf rlp
 	rm -rf hp
