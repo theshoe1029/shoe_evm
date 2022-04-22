@@ -7,6 +7,29 @@
 #include "int256.h"
 #include "evm.h"
 
+void pop1(unsigned char* a)
+{
+    memcpy(a, stack[stack_top], WORD_SIZE);
+    pc++;
+}
+
+void pop2(unsigned char* a, unsigned char* b)
+{
+    memcpy(a, stack[stack_top], WORD_SIZE);
+    memcpy(b, stack[stack_top-1], WORD_SIZE);
+    stack_top--; 
+    pc++;
+}
+
+void pop3(unsigned char* a, unsigned char* b, unsigned char* c)
+{
+    memcpy(a, stack[stack_top], WORD_SIZE);
+    memcpy(b, stack[stack_top-1], WORD_SIZE);
+    memcpy(c, stack[stack_top-2], WORD_SIZE);
+    stack_top-=2; 
+    pc++;
+}
+
 void no_op() {}
 
 void op_stop()
@@ -17,40 +40,32 @@ void op_stop()
 void op_add()
 {
     unsigned char a[WORD_SIZE], b[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    stack_top--; pc++;
+    pop2(a, b);
     add_int256(a, b, stack[stack_top]);
 }
 
 void op_mul()
 {
     unsigned char a[WORD_SIZE], b[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    stack_top--; pc++;
+    pop2(a, b);
     mul_int256(a, b, stack[stack_top]);
 }
 
 void op_sub()
 {
     unsigned char a[WORD_SIZE], b[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    stack_top--; pc++;
+    pop2(a, b);
     sub_int256(a, b, stack[stack_top]);
 }
 
 void op_div()
 {
     unsigned char a[WORD_SIZE], b[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    stack_top--; pc++;
+    pop2(a, b);
     unsigned char lt[WORD_SIZE];
     lt_int256(a, b, lt);
     memset(stack[stack_top], 0, WORD_SIZE);
-    if (!lt[WORD_SIZE-1]) {
+    if (!uint256_is_zero(b)) {
         div_int256(a, b, stack[stack_top]);
     }
 }
@@ -58,9 +73,7 @@ void op_div()
 void op_sdiv()
 {
     unsigned char a[WORD_SIZE], b[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    stack_top--; pc++;
+    pop2(a, b);
     memset(stack[stack_top], 0, WORD_SIZE);
     unsigned char min_int256[WORD_SIZE]; memset(min_int256, 0x0, WORD_SIZE); min_int256[0] = 0x80;
     unsigned char neg_1[WORD_SIZE]; memset(neg_1, 0xff, WORD_SIZE);
@@ -87,9 +100,7 @@ void op_sdiv()
 void op_mod()
 {
     unsigned char a[WORD_SIZE], b[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    stack_top--; pc++;
+    pop2(a, b);
     memset(stack[stack_top], 0, WORD_SIZE);
     if (!uint256_is_zero(b)) {
         mod_int256(a, b, stack[stack_top]);
@@ -99,9 +110,7 @@ void op_mod()
 void op_smod()
 {
     unsigned char a[WORD_SIZE], b[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    stack_top--; pc++;
+    pop2(a, b);
     memset(stack[stack_top], 0, WORD_SIZE);
     if (!uint256_is_zero(b)) {
         unsigned char abs_a[WORD_SIZE], abs_b[WORD_SIZE];
@@ -117,12 +126,10 @@ void op_smod()
 
 void op_addmod()
 {
-    unsigned char a[WORD_SIZE], b[WORD_SIZE], c[WORD_SIZE], sum[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    memcpy(c, stack[stack_top-2], WORD_SIZE);
+    unsigned char a[WORD_SIZE], b[WORD_SIZE], c[WORD_SIZE];
+    pop3(a, b, c);
+    unsigned char sum[WORD_SIZE];
     memset(sum, 0, WORD_SIZE);
-    stack_top-=2; pc++;
     memset(stack[stack_top], 0, WORD_SIZE);
     if (!uint256_is_zero(c)) {
         add_int256(a, b, sum);
@@ -132,12 +139,10 @@ void op_addmod()
 
 void op_mulmod()
 {
-    unsigned char a[WORD_SIZE], b[WORD_SIZE], c[WORD_SIZE], prod[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    memcpy(c, stack[stack_top-2], WORD_SIZE);
+    unsigned char a[WORD_SIZE], b[WORD_SIZE], c[WORD_SIZE];
+    pop3(a, b, c);
+    unsigned char prod[WORD_SIZE];
     memset(prod, 0, WORD_SIZE);
-    stack_top-=2; pc++;
     memset(stack[stack_top], 0, WORD_SIZE);
     if (!uint256_is_zero(c)) {
         mul_int256(a, b, prod);
@@ -148,9 +153,7 @@ void op_mulmod()
 void op_exp()
 {
     unsigned char a[WORD_SIZE], b[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    stack_top--; pc++;
+    pop2(a, b);
     memset(stack[stack_top], 0, WORD_SIZE);
     exp_uint256(a, b, stack[stack_top]);
 }
@@ -158,15 +161,11 @@ void op_exp()
 void op_signextend()
 {    
     unsigned char a[WORD_SIZE], b[WORD_SIZE];
-    memcpy(a, stack[stack_top], WORD_SIZE);
-    memcpy(b, stack[stack_top-1], WORD_SIZE);
-    stack_top--; pc++;
+    pop2(a, b);
     memset(stack[stack_top], 0, WORD_SIZE);
 
     assert(msb(a)>=WORD_SIZE-2);
-    unsigned int uintb = 0;
-    uintb += a[WORD_SIZE-2]<<8;
-    uintb += a[WORD_SIZE-1];
+    unsigned int uintb = to_uint(a);
     unsigned int t = 256-(8*(uintb+1));
 
     for (unsigned int i = 0; i < 32; i++) {
@@ -175,6 +174,131 @@ void op_signextend()
         } else {
             stack[stack_top][i] = b[i];
         }
+    }
+}
+
+void op_lt()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    lt_int256(a, b, stack[stack_top]);
+}
+
+void op_gt()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    gt_int256(a, b, stack[stack_top]);
+}
+
+void op_slt()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    unsigned char sa = a[0]>>7;
+    unsigned char sb = b[0]>>7;
+    if (sa == 0x1 && sb == 0x0) {
+        uint_to_uint256(1, stack[stack_top]);
+    } else if (sa == 0x0 && sb == 0x1) {
+        uint_to_uint256(0, stack[stack_top]);
+    } else {
+        lt_int256(a, b, stack[stack_top]);
+    }
+}
+
+void op_sgt()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    unsigned char sa = a[0]>>7;
+    unsigned char sb = b[0]>>7;
+    if (sa == 0x1 && sb == 0x0) {
+        uint_to_uint256(0, stack[stack_top]);
+    } else if (sa == 0x0 && sb == 0x1) {
+        uint_to_uint256(1, stack[stack_top]);
+    } else {
+        gt_int256(a, b, stack[stack_top]);
+    }
+}
+
+void op_eq()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    eq_int256(a, b, stack[stack_top]);
+}
+
+void op_iszero()
+{
+    unsigned char a[WORD_SIZE];
+    pop1(a);
+    uint_to_uint256(uint256_is_zero(stack[stack_top]), stack[stack_top]);
+}
+
+void op_and()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    and_int256(a, b, stack[stack_top]);
+}
+
+void op_or()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    or_int256(a, b, stack[stack_top]);
+}
+
+void op_xor()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    xor_int256(a, b, stack[stack_top]);
+}
+
+void op_not()
+{
+    unsigned char a[WORD_SIZE];
+    pop1(a);
+    not_int256(stack[stack_top], stack[stack_top]);
+}
+
+void op_byte()
+{
+    unsigned char i[WORD_SIZE], x[WORD_SIZE];
+    pop2(i, x);
+    memset(stack+stack_top, 0, WORD_SIZE);
+    unsigned int uinti = to_uint(i);
+    stack[stack_top][WORD_SIZE-1] = x[N_BYTES-uinti-1];
+}
+
+void op_shl()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    shl_int256(a, b, stack[stack_top]);
+}
+
+void op_shr()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    memset(stack+stack_top, 0, WORD_SIZE);
+    shr_int256(a, b, stack[stack_top]);
+}
+
+void op_sar()
+{
+    unsigned char a[WORD_SIZE], b[WORD_SIZE];
+    pop2(a, b);
+    memset(stack+stack_top, 0, WORD_SIZE);
+    unsigned char abs_a[WORD_SIZE], abs_b[WORD_SIZE];
+    abs_int256(a, abs_a);
+    abs_int256(b, abs_b);
+    shr_int256(abs_a, abs_b, stack[stack_top]);
+    unsigned char sign = b[0]>>7;
+    if (sign) {
+        neg_int256(stack[stack_top], stack[stack_top]);
     }
 }
 
@@ -321,20 +445,20 @@ void exec_op(unsigned char opcode)
         /*0x0e*/ &no_op,
         /*0x0f*/ &no_op,
 
-        /*0x10*/ &no_op,
-        /*0x11*/ &no_op,
-        /*0x12*/ &no_op,
-        /*0x13*/ &no_op,
-        /*0x14*/ &no_op,
-        /*0x15*/ &no_op,
-        /*0x16*/ &no_op,
-        /*0x17*/ &no_op,
-        /*0x18*/ &no_op,
-        /*0x19*/ &no_op,
-        /*0x1a*/ &no_op,
-        /*0x1b*/ &no_op,
-        /*0x1c*/ &no_op,
-        /*0x1d*/ &no_op,
+        /*0x10*/ &op_lt,
+        /*0x11*/ &op_gt,
+        /*0x12*/ &op_slt,
+        /*0x13*/ &op_sgt,
+        /*0x14*/ &op_eq,
+        /*0x15*/ &op_iszero,
+        /*0x16*/ &op_and,
+        /*0x17*/ &op_or,
+        /*0x18*/ &op_xor,
+        /*0x19*/ &op_not,
+        /*0x1a*/ &op_byte,
+        /*0x1b*/ &op_shl,
+        /*0x1c*/ &op_shr,
+        /*0x1d*/ &op_sar,
 
         /*0x1e*/ &no_op,
         /*0x1f*/ &no_op,

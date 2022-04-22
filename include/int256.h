@@ -104,6 +104,27 @@ static void lt_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
     out[N_BYTES-1] = !out[N_BYTES-1];
 }
 
+static void and_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
+{
+    for (int i = 0; i < N_BYTES; i++) {
+        out[i] = v1[i]&v2[i];
+    }
+}
+
+static void or_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
+{
+    for (int i = 0; i < N_BYTES; i++) {
+        out[i] = v1[i]|v2[i];
+    }
+}
+
+static void xor_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
+{
+    for (int i = 0; i < N_BYTES; i++) {
+        out[i] = v1[i]^v2[i];
+    }
+}
+
 static void not_int256(unsigned char* v1, unsigned char* out)
 {
     for (int i = 0; i < N_BYTES; i++) {
@@ -131,60 +152,19 @@ static void sub_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
 
 static void mul_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
 {
-    unsigned char v3[32]; memcpy(v3, v1, N_BYTES);
-    memset(out, 0, N_BYTES);
-    while(!uint256_is_zero(v3) && !uint256_is_zero(v2)) {
-        add_int256(out, v2, out);
-        dec_int256(v3, v3);
-    }
-}
-
-static void div_helper(size_t dvdend_len, unsigned char* dvdend, unsigned char* dvisor, char* out)
-{
-    size_t dvisor_len = N_BYTES-msb(dvisor);
-    unsigned char cdvdend[N_BYTES]; memset(cdvdend, 0, N_BYTES); memcpy(cdvdend, dvdend, dvdend_len);
-    unsigned char one[N_BYTES]; memset(one, 0, N_BYTES); one[dvdend_len-1] = 0x01;
-    unsigned char lt[N_BYTES], eq[N_BYTES], v3[N_BYTES];
-    lt_int256(cdvdend, dvisor, lt);
-    eq_int256(cdvdend, dvisor, eq);
-    if (dvdend_len < dvisor_len || (lt[N_BYTES-1] && !eq[N_BYTES-1])) {
-        if (dvdend_len == N_BYTES) {
-            return;
-        } else {
-            div_helper(dvdend_len+1, dvdend, dvisor, out);
-        }
+    unsigned char v3[32], iter[32];
+    if (msb(v1) > msb(v2)) {
+        memcpy(v3, v2, N_BYTES);
+        memcpy(iter, v1, N_BYTES);
     } else {
-        mul_int256(dvisor, out, v3);
-        lt_int256(dvdend, v3, lt);
-        eq_int256(dvdend, v3, eq);
-        while (!lt[N_BYTES-1] && !eq[N_BYTES-1]) {
-            add_int256(out, one, out);
-            mul_int256(dvisor, out, v3);
-            lt_int256(dvdend, v3, lt);
-            eq_int256(dvdend, v3, eq);
-        }
-        if (!eq[N_BYTES-1]) {
-            sub_int256(out, one, out);
-            mul_int256(dvisor, out, v3);
-        }
-        sub_int256(dvdend, v3, dvdend);
+        memcpy(v3, v1, N_BYTES);
+        memcpy(iter, v2, N_BYTES);
     }
-}
-
-static void div_int256(unsigned char* dvdend, unsigned char* dvisor, unsigned char* out)
-{
-    unsigned char cdvdend[N_BYTES]; 
-    memcpy(cdvdend, dvdend, N_BYTES);
-    div_helper(1, cdvdend, dvisor, out);
-}
-
-static void mod_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
-{
-    unsigned char quot[N_BYTES];
-    memset(quot, 0, N_BYTES);
-    div_int256(v1, v2, quot);
-    mul_int256(v2, quot, out);
-    sub_int256(v1, out, out);
+    memset(out, 0, N_BYTES);
+    while(!uint256_is_zero(v3) && !uint256_is_zero(iter)) {
+        add_int256(out, v3, out);
+        dec_int256(iter, iter);
+    }
 }
 
 static void exp_uint256(unsigned char* v1, unsigned char* v2, unsigned char* out)
@@ -199,10 +179,82 @@ static void exp_uint256(unsigned char* v1, unsigned char* v2, unsigned char* out
     }
 }
 
+static void shl_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
+{
+    unsigned char k2[N_BYTES];
+    unsigned char pow2[N_BYTES];
+    uint_to_uint256(2, k2);
+    exp_uint256(k2, v1, pow2);
+    mul_int256(v2, pow2, out);
+}
+
+static void div_helper(size_t dvdend_len, unsigned char* dvdend, unsigned char* dvisor, char* out)
+{
+    size_t dvisor_len = N_BYTES-msb(dvisor);
+    unsigned char v3[N_BYTES];
+    mul_int256(dvisor, out, v3);
+    sub_int256(dvdend, v3, v3);
+    unsigned char cdvdend[N_BYTES]; memset(cdvdend, 0, N_BYTES); memcpy(cdvdend+N_BYTES-dvdend_len, v3, dvdend_len);
+    unsigned char cout[N_BYTES]; memset(cout, 0, N_BYTES);
+    unsigned char lt[N_BYTES], eq[N_BYTES];
+    unsigned char one[N_BYTES]; memset(one, 0, N_BYTES); one[N_BYTES-1] = 0x01;
+    lt_int256(cdvdend, dvisor, lt);
+    eq_int256(cdvdend, dvisor, eq);
+    if (dvdend_len > N_BYTES) {
+        return;
+    } else if (dvisor_len < dvdend_len && (!lt[N_BYTES-1] || eq[N_BYTES-1])) {
+        while (!lt[N_BYTES-1] || eq[N_BYTES-1]) {
+            add_int256(cout, one, cout);
+            mul_int256(dvisor, cout, v3);
+            lt_int256(cdvdend, v3, lt);
+            eq_int256(cdvdend, v3, eq);
+        }
+        if (!eq[N_BYTES-1]) {
+            sub_int256(cout, one, cout);
+        }
+        memset(v3, 0, N_BYTES);
+        uint_to_uint256((N_BYTES-dvdend_len)*8, v3);
+        shl_int256(v3, cout, cout);
+        add_int256(out, cout, out);
+    }
+    div_helper(dvdend_len+1, dvdend, dvisor, out);
+}
+
+static void div_int256(unsigned char* dvdend, unsigned char* dvisor, unsigned char* out)
+{
+    div_helper(1, dvdend, dvisor, out);
+}
+
+static void shr_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
+{
+    unsigned char k2[N_BYTES];
+    unsigned char pow2[N_BYTES];
+    uint_to_uint256(2, k2);
+    exp_uint256(k2, v1, pow2);
+    div_int256(v2, pow2, out);
+}
+
+static void mod_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
+{
+    unsigned char quot[N_BYTES];
+    memset(quot, 0, N_BYTES);
+    div_int256(v1, v2, quot);
+    mul_int256(v2, quot, out);
+    sub_int256(v1, out, out);
+}
+
 static unsigned long long to_uint64(unsigned char* word)
 {
     unsigned long long val = 0;
     memcpy(&val, word+N_BYTES-8, sizeof(unsigned long long));
+}
+
+static unsigned int to_uint(unsigned char* word)
+{
+    unsigned int uintb = 0;
+    uintb += word[N_BYTES-2]<<8;
+    uintb += word[N_BYTES-1];
+    return uintb;
 }
 
 static int uint64_is_overflowed(unsigned char* word)
