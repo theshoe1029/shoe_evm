@@ -107,14 +107,13 @@ void keccak_f_1600(void* state)
     }    
 }
 
-unsigned char* keccak_256(unsigned char* input)
+unsigned char* keccak_256(size_t input_byte_len, unsigned char* input)
 {
     // 200*8 = 1600 bits for Keccac-f(1600)
     uint8_t state[200];
     memset(state, 0, sizeof(state));
 
-    unsigned int block_size = 0;
-    size_t input_byte_len = strlen(input);
+    unsigned int block_size = 0;    
     // 256 bits
     size_t output_byte_len = 32;
     unsigned char* output = (unsigned char*) malloc(output_byte_len);

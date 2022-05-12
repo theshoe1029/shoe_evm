@@ -28,7 +28,7 @@ static unsigned char nibble_at(size_t i, unsigned char* arr)
 
 static nibble byte_to_nibble(unsigned char byte)
 {
-    (nibble) {.first=FIRST_NIBBLE(byte), .second=SECOND_NIBBLE(byte)};
+    return (nibble) {.first=FIRST_NIBBLE(byte), .second=SECOND_NIBBLE(byte)};
 }
 
 static nibble* byte_arr_to_nibble_arr(size_t size, unsigned char* arr, size_t* output_size)

@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "int256.h"
 #include "evm.h"
+#include "keccak256.h"
 
 void pop1(unsigned char* a)
 {
@@ -302,6 +302,15 @@ void op_sar()
     }
 }
 
+void op_sha3()
+{
+    unsigned char uint256_offset[WORD_SIZE], uint256_length[WORD_SIZE];
+    pop2(uint256_offset, uint256_length);
+    size_t offset = to_uint64(uint256_offset);
+    size_t length = to_uint64(uint256_length);
+    memcpy(stack+stack_top, keccak_256(length, (unsigned char*) memory+offset), 32);
+}
+
 void op_pop()
 {
     stack_top--; pc++;
@@ -309,14 +318,14 @@ void op_pop()
 
 void op_mstore()
 {
-    unsigned long long offset = to_uint64(stack[stack_top]);
-    unsigned char* value = stack[stack_top-1];
-    stack_top-=2; pc++;
+    unsigned char uint256_offset[WORD_SIZE], value[WORD_SIZE];
+    pop2(uint256_offset, value); stack_top--;
+    size_t offset = to_uint64(uint256_offset);
     if (offset+32 > mem_size) {
         mem_size = offset+32;
         memory = realloc(memory, mem_size);        
     }
-    memcpy(memory+offset, value, 32);
+    memcpy(memory+offset, value, 32);    
 }
 
 void op_push(size_t size)
@@ -463,7 +472,7 @@ void exec_op(unsigned char opcode)
         /*0x1e*/ &no_op,
         /*0x1f*/ &no_op,
 
-        /*0x20*/ &no_op,
+        /*0x20*/ &op_sha3,
 
         /*0x21*/ &no_op,
         /*0x22*/ &no_op,
@@ -707,7 +716,7 @@ void exec_op(unsigned char opcode)
     (*opcode_table[opcode])();
 }
 
-void evm_exec(unsigned char* code)
+void evm_exec(const char* code)
 {
     assert(strlen(code)%2==0);
 

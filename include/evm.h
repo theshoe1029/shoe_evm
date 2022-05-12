@@ -17,7 +17,7 @@ unsigned int* memory;
 size_t mem_size;
 unsigned char* r_val;
 
-void evm_exec(unsigned char* bytecode);
+void evm_exec(const char* bytecode);
 
 static void print_stack()
 {

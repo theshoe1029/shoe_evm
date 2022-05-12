@@ -8,7 +8,7 @@
 unsigned char* hp_encode(size_t arr_size, nibble* arr, unsigned int t, size_t* output_size)
 {
     *output_size = (arr_size/2)+1;
-    unsigned char* output = (char*) malloc(*output_size);
+    unsigned char* output = (unsigned char*) malloc(*output_size);
     nibble n = arr[0];
     if (arr_size%2 == 0) {
         output[0] = 16*f_t(t);

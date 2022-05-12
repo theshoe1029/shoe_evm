@@ -5,7 +5,7 @@
 
 #include "include/evm.h"
 
-int main(int argc, unsigned char** argv)
+int main(int argc, char** argv)
 {
     evm_exec(argv[1]);
     print_stack();

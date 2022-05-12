@@ -23,7 +23,7 @@ rlp_struct* new_rlp_str(size_t size, unsigned const char* data)
     rlp_struct* str = (rlp_struct*) malloc(sizeof(rlp_struct));
     str->int_val = 0;
     str->data = (unsigned char*) malloc(size);
-    strcpy(str->data, data);
+    memcpy(str->data, data, size);
     str->type = BYTE_ARR;
     str->size = size;
     str->sub_arr = 0;
@@ -86,7 +86,7 @@ size_t get_rlp_list_size(rlp_struct* root)
 void print_rlp_str(rlp_struct* str)
 {    
     if (str->size == 1) {
-        str->data[0] & ~0x7f == 0 ? printf("%c", str->data[0]) : printf("%x", str->data[0]);        
+        (str->data[0] & ~0x7f) == 0 ? printf("%c", str->data[0]) : printf("%x", str->data[0]);        
     } else {
         printf("%s", str->data);
     }

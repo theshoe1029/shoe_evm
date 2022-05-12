@@ -56,7 +56,7 @@ rlp_struct* construct_node(input_set* input, unsigned int i)
         if (size < 32) {
             return new_rlp_str(size, encoded_trie);
         } else {
-            unsigned char* encoded_root = keccak_256(encoded_trie);
+            unsigned char* encoded_root = keccak_256(size, encoded_trie);
             return new_rlp_str(32, encoded_root);
         }
     }
@@ -114,6 +114,6 @@ unsigned char* get_trie_hash(input_set* input)
     rlp_struct* trie = construct_trie(input, 0);
     size_t size = 0;
     unsigned char* encoded_trie = rlp_encode(&size, trie);
-    unsigned char* encoded_root = keccak_256(encoded_trie);
+    unsigned char* encoded_root = keccak_256(size, encoded_trie);
     return encoded_root;
 }

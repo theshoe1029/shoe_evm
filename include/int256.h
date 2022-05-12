@@ -137,7 +137,7 @@ static void add_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
     unsigned char carry = 0;
     for (int i = N_BYTES-1; i >= 0; i--) {
         unsigned int sum = v1[i]+v2[i]+carry;
-        carry = v1[i]+v2[i]+carry>>8;
+        carry = (v1[i]+v2[i]+carry)>>8;
         out[i] = sum&0xff;
     }
 }
@@ -188,7 +188,7 @@ static void shl_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
     mul_int256(v2, pow2, out);
 }
 
-static void div_helper(size_t dvdend_len, unsigned char* dvdend, unsigned char* dvisor, char* out)
+static void div_helper(size_t dvdend_len, unsigned char* dvdend, unsigned char* dvisor, unsigned char* out)
 {
     size_t dvisor_len = N_BYTES-msb(dvisor);
     unsigned char v3[N_BYTES];
@@ -244,9 +244,12 @@ static void mod_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
 }
 
 static unsigned long long to_uint64(unsigned char* word)
-{
+{    
     unsigned long long val = 0;
-    memcpy(&val, word+N_BYTES-8, sizeof(unsigned long long));
+    for (int i = N_BYTES-8; i < N_BYTES; i++) {        
+        val += word[i]<<((N_BYTES-i-1)*8);
+    }
+    return val;
 }
 
 static unsigned int to_uint(unsigned char* word)
