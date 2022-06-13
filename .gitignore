@@ -1,4 +1,5 @@
 cevm
 test
 *.so
+evmc*
 /build

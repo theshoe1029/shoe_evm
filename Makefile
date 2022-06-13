@@ -1,13 +1,13 @@
 CC := gcc
 CFLAGS := -Wall -Wno-unused-function -fPIC
 OBJDIR := ./build
-OBJS := $(addprefix $(OBJDIR)/, evm.o hex_prefix.o keccak256.o rlp.o trie.o)
-TEST_OBJS := $(addprefix $(OBJDIR)/, hex_prefix_test.o rlp_test.o trie_test.o keccak256_test.o)
+OBJS := $(addprefix $(OBJDIR)/, evm.o keccak256.o)
+TEST_OBJS := $(addprefix $(OBJDIR)/, keccak256_test.o)
 INCLUDES := ./include
 TEST_INCLUDES := ./tst/include
 
 all: clean $(OBJS)
-	$(CC) $(CFLAGS) -I $(INCLUDES) $(OBJS) main.c -shared -o cevm.so cevm
+	$(CC) $(CFLAGS) -I $(INCLUDES) $(OBJS) -shared -o libshoe-evm.so
 	
 test: all $(TEST_OBJS)
 	$(CC) $(CFLAGS) -I $(TEST_INCLUDES) $(OBJS) $(TEST_OBJS) test.c -o test && ./test

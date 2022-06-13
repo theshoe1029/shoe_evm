@@ -32,7 +32,7 @@ void keccak256_test()
 
     for (int i = 0; i < n_tests; i++) {
         const char* input = test_inputs[i];
-        unsigned char* output = keccak_256(strlen(input), input);
+        unsigned char* output = keccak_256(strlen(input), (unsigned char*) input);
         printf("test string: %s\n", input);
         printf("output: ");        
         for (size_t j = 0; j < 32; j++) {
