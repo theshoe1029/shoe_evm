@@ -21,6 +21,21 @@ static void print_nibble_arr(size_t arr_size, nibble* arr)
     }    
 }
 
+static int nibble_arr_eq(size_t s1, nibble* arr1, size_t s2, nibble* arr2)
+{
+    if (s1 != s2) return 0;
+    char b1 = 0; char b2 = 0;
+    for (size_t i = 0; i < s1*2; i++) {
+        b1 += i%2 ? arr1[i/2].first<<4 : arr1[i/2].second;
+        b2 += i%2 ? arr2[i/2].first<<4 : arr2[i/2].second;
+        if (i%2) {
+            if (b1 != b2) return 0;
+            b1 = 0; b2 = 0;
+        }
+    }
+    return 1;
+}
+
 static unsigned char nibble_at(size_t i, unsigned char* arr)
 {
     return i%2 ? SECOND_NIBBLE(arr[i/2]) : FIRST_NIBBLE(arr[i/2]);

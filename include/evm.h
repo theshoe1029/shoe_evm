@@ -13,7 +13,7 @@ unsigned int stack_top;
 unsigned char stack[STACK_SIZE][WORD_SIZE];
 size_t bytecode_len;
 unsigned char* bytecode;
-unsigned int* memory;
+unsigned char* memory;
 size_t mem_size;
 unsigned char* r_val;
 

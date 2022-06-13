@@ -31,7 +31,6 @@ nibble* hp_decode(size_t arr_size, unsigned char* arr, size_t* output_size)
 {
     nibble header = byte_to_nibble(arr[0]);
     nibble* nibbles;
-    unsigned int t = header.second;
     if (header.first == 0) {
         *output_size = arr_size-1;
         nibbles = (nibble*) malloc(sizeof(nibble)*(*output_size));

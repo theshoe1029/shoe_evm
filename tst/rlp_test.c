@@ -2,30 +2,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "include/rlp.h"
+#include "rlp.h"
 
-int main(int argc, char** argv) 
+void rlp_test()
 {    
     rlp_struct* root = new_rlp_list();
     print_rlp_list(root);
     printf("\n");
     
-    rlp_struct* s1 = new_rlp_str(3, "dog");
+    rlp_struct* s1 = new_rlp_str(3, (unsigned const char*) "dog");
     rlp_list_add(root, s1);
-    rlp_struct* s2 = new_rlp_str(3, "cat");
+    rlp_struct* s2 = new_rlp_str(3, (unsigned const char*) "cat");
     rlp_list_add(root, s2);
     print_rlp_list(root);
     printf("\n");
 
     rlp_struct* child1 = new_rlp_list();
     rlp_list_add(root, child1);
-    rlp_struct* s3 = new_rlp_str(5, "goose");
+    rlp_struct* s3 = new_rlp_str(5, (unsigned const char*) "goose");
     rlp_list_add(child1, s3);
     print_rlp_list(child1);
     print_rlp_list(root);
     printf("\n");
 
-    rlp_struct* s4 = new_rlp_str(5, "horse");
+    rlp_struct* s4 = new_rlp_str(5, (unsigned const char*) "horse");
     rlp_list_add(root, s4);
     print_rlp_list(root);
     printf("\n");
@@ -40,18 +40,18 @@ int main(int argc, char** argv)
     print_rlp_list(root);
     printf("\n");
 
-    unsigned long long int output_size;
-    char* output;
+    size_t output_size;
+    unsigned char* output;
 
-    rlp_struct* s5 = new_rlp_str(56, "Lorem ipsum dolor sit amet, consectetur adipisicing elit");
+    rlp_struct* s5 = new_rlp_str(56, (unsigned const char*) "Lorem ipsum dolor sit amet, consectetur adipisicing elit");
     output_size = 0;
     output = rlp_encode(&output_size, s5);
     for (int i = 0; i < output_size; i++) printf("%x ", output[i]);
     printf("\n");
 
     rlp_struct* root2 = new_rlp_list();
-    rlp_struct* s6 = new_rlp_str(3, "cat");
-    rlp_struct* s7 = new_rlp_str(3, "dog");
+    rlp_struct* s6 = new_rlp_str(3, (unsigned const char*) "cat");
+    rlp_struct* s7 = new_rlp_str(3, (unsigned const char*) "dog");
     rlp_list_add(root2, s6);
     rlp_list_add(root2, s7);
     output_size = 0;
@@ -95,7 +95,7 @@ int main(int argc, char** argv)
     //[ "zw", [ 4 ], 1 ]
     rlp_struct* l9 = new_rlp_list();
     rlp_struct* l10 = new_rlp_list();
-    rlp_struct* s8 = new_rlp_str(2, "zw");
+    rlp_struct* s8 = new_rlp_str(2, (unsigned const char*) "zw");
     rlp_struct* n3 = new_rlp_int(4);
     rlp_struct* n4 = new_rlp_int(1);
     rlp_list_add(l10, n3);
@@ -107,7 +107,7 @@ int main(int argc, char** argv)
     for (int i = 0; i < output_size; i++) printf("%x ", output[i]);
     printf("\n");
 
-    unsigned long long int decoded_size;
+    size_t decoded_size;
 
     output_size = 3;
     print_rlp_str(rlp_decode(&decoded_size, rlp_encode(&output_size, s6)));
@@ -133,11 +133,10 @@ int main(int argc, char** argv)
     printf("\n");
 
     rlp_struct* l11 = new_rlp_list();
-    rlp_struct* s9 = new_rlp_str(56, "Lorem ipsum dolor sit amet, consectetur adipisicing elit");
+    rlp_struct* s9 = new_rlp_str(56, (unsigned const char*) "Lorem ipsum dolor sit amet, consectetur adipisicing elit");
     rlp_list_add(l11, s9);
     output_size = 0;
     output = rlp_encode(&output_size, l11);
     for (int i = 0; i < output_size; i++) printf("%x ", output[i]);
     printf("\n");
-    return 0;
 }

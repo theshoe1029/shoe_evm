@@ -1,6 +1,4 @@
-keccak256
-rlp
-hp
-trie
-main
-/leveldb
+cevm
+test
+*.so
+/build

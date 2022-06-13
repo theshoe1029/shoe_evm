@@ -144,7 +144,6 @@ static void add_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
 
 static void sub_int256(unsigned char* v1, unsigned char* v2, unsigned char* out)
 {
-    unsigned char carry = 0;
     unsigned char neg_v2[N_BYTES];
     neg_int256(v2, neg_v2);
     add_int256(v1, neg_v2, out);
@@ -268,7 +267,7 @@ static int uint64_is_overflowed(unsigned char* word)
     memcpy(&v1, word, sizeof(unsigned long long));
     memcpy(&v2, word+8, sizeof(unsigned long long));
     memcpy(&v3, word+16, sizeof(unsigned long long));
-    return v1 | v2 | v3 != 0;
+    return (v1 | v2 | v3) != 0;
 }
 
 #endif

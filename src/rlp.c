@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "include/rlp.h"
+#include "rlp.h"
 
 rlp_struct* new_rlp_list()
 {
@@ -239,6 +239,7 @@ unsigned char* rlp_encode(size_t* size, rlp_struct* val)
         case LIST:
             return r_l(size, val->sub_arr);
     }
+    return 0;
 }
 
 rlp_struct* rlp_decode(size_t* decoded_size, unsigned char* rlp_data)

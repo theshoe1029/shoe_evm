@@ -316,22 +316,59 @@ void op_pop()
     stack_top--; pc++;
 }
 
+void op_mload()
+{
+    unsigned char uint256_offset[WORD_SIZE];
+    pop1(uint256_offset);
+    size_t offset = to_uint64(uint256_offset);
+    memcpy(stack[stack_top], memory+offset, WORD_SIZE);
+}
+
 void op_mstore()
 {
     unsigned char uint256_offset[WORD_SIZE], value[WORD_SIZE];
     pop2(uint256_offset, value); stack_top--;
     size_t offset = to_uint64(uint256_offset);
-    if (offset+32 > mem_size) {
-        mem_size = offset+32;
-        memory = realloc(memory, mem_size);        
+    if (offset+WORD_SIZE > mem_size) {
+        size_t old_mem_size = mem_size;
+        mem_size = offset+WORD_SIZE;
+        memory = (unsigned char*) realloc(memory, mem_size);
+        memset(memory+old_mem_size, 0, mem_size-old_mem_size);
     }
-    memcpy(memory+offset, value, 32);    
+    memcpy(memory+offset, value, WORD_SIZE);
+}
+
+void op_mstore8()
+{
+    unsigned char uint256_offset[WORD_SIZE], uint256_256[WORD_SIZE], uint256_mod[WORD_SIZE], value[WORD_SIZE];
+    pop2(uint256_offset, value); stack_top--;
+    size_t offset = to_uint64(uint256_offset);
+    if (offset+1 > mem_size) {
+        size_t old_mem_size = mem_size;
+        mem_size = offset+1;
+        memory = (unsigned char*) realloc(memory, mem_size);
+        memset(memory+old_mem_size, 0, mem_size-old_mem_size);
+    }
+    uint_to_uint256(256, uint256_256);
+    mod_int256(value, uint256_256, uint256_mod);
+    memset(memory+offset, uint256_mod[WORD_SIZE-1], 1);
+}
+
+void op_sload()
+{
+    unsigned char key[WORD_SIZE];
+    pop1(key); stack_top--;
+}
+
+void op_sstore()
+{
+    pc++;
 }
 
 void op_push(size_t size)
 {
     pc++;
-    unsigned char val[size];
+    unsigned char* val = (unsigned char*) malloc(size);
     size_t pcs = pc;
     for (; pc < pcs+size; pc++) {
         val[pc-pcs] = bytecode[pc];
@@ -339,6 +376,7 @@ void op_push(size_t size)
     stack_top++;
     memset(stack+stack_top, 0, WORD_SIZE);
     memcpy(*(stack+stack_top)+WORD_SIZE-size, val, size);
+    free(val);
 }
 void op_push1() { op_push(1); }
 void op_push2() { op_push(2); }
@@ -525,11 +563,11 @@ void exec_op(unsigned char opcode)
         /*0x4f*/ &no_op,
 
         /*0x50*/ &op_pop,
-        /*0x51*/ &no_op,
+        /*0x51*/ &op_mload,
         /*0x52*/ &op_mstore,
-        /*0x53*/ &no_op,
-        /*0x54*/ &no_op,
-        /*0x55*/ &no_op,
+        /*0x53*/ &op_mstore8,
+        /*0x54*/ &op_sload,
+        /*0x55*/ &op_sstore,
         /*0x56*/ &no_op,
         /*0x57*/ &no_op,
         /*0x58*/ &no_op,
@@ -731,7 +769,7 @@ void evm_exec(const char* code)
     stack_top = -1;
     memset(stack, 0, WORD_SIZE*STACK_SIZE);
     mem_size = 0;
-    memory = (unsigned int*) malloc(sizeof(unsigned int*));
+    memory = (unsigned char*) malloc(sizeof(unsigned char*));
     r_val = NULL;
     while (pc < bytecode_len && r_val == NULL) {
         exec_op(bytecode[pc]);

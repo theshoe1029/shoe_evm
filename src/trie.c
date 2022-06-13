@@ -1,8 +1,8 @@
 #include <stdlib.h>
 
-#include "include/hex_prefix.h"
-#include "include/keccak256.h"
-#include "include/trie.h"
+#include "hex_prefix.h"
+#include "keccak256.h"
+#include "trie.h"
 
 void get_j(size_t i, input_set* input, size_t* j)
 {

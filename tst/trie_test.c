@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "include/trie.h"
+#include "trie.h"
 
-int main (int argc, char** argv)
+void trie_test()
 {
     trie_val* keys = (trie_val*) malloc(sizeof(trie_val)*4);
     unsigned char key1[] = {0xa7, 0x11, 0x35, 0x50};
