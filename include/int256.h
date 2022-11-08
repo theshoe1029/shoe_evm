@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 
 #ifndef INT_256_H_
@@ -251,9 +252,9 @@ static unsigned long long to_uint64(unsigned char* word)
     return val;
 }
 
-static unsigned int to_uint(unsigned char* word)
+static uint8_t to_uint(unsigned char* word)
 {
-    unsigned int uintb = 0;
+    uint8_t uintb = 0;
     uintb += word[N_BYTES-2]<<8;
     uintb += word[N_BYTES-1];
     return uintb;

@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "evm.h"
-#include "keccak256.h"
+#include "include/evm.h"
+#include "include/keccak256.h"
 
 void destroy(struct evmc_vm *vm)
 {
@@ -56,16 +56,22 @@ struct evmc_result execute(struct evmc_vm* instance,
     memset(stack, 0, WORD_SIZE*STACK_SIZE);
     mem_size = 0;
     memory = (unsigned char*) malloc(sizeof(unsigned char*));
-    struct evmc_result *result = (struct evmc_result*) malloc(sizeof(struct evmc_result));
-    result->gas_left = msg->gas;
+    struct evmc_result result = {
+        .gas_left = msg->gas,
+        .status_code = EVMC_SUCCESS,
+        .create_address = 0,
+        .output_data = 0,
+        .output_size = 0,
+        .padding = 0,
+        .release = 0
+    };    
     while (pc < code_size) {
         unsigned char a[WORD_SIZE], b[WORD_SIZE], c[WORD_SIZE], d[WORD_SIZE];
         uint8_t op = code[pc];
-        result->gas_left--;
         switch(op) {
             case OP_STOP:
                 pc = code_size;
-                result->status_code = EVMC_SUCCESS;
+                result.status_code = EVMC_SUCCESS;
                 break;
             case OP_ADD:
                 pop2(a, b);
@@ -265,9 +271,97 @@ struct evmc_result execute(struct evmc_vm* instance,
                 {
                     size_t offset = to_uint64(a);
                     size_t length = to_uint64(b);
-                    memcpy(stack+stack_top, keccak_256(length, (unsigned char*) memory+offset), 32);
+                    memcpy(stack+stack_top, keccak_256(length, (unsigned char*) memory+offset), WORD_SIZE);
                 }
-                break;       
+                break;
+            case OP_ADDRESS:
+                stack_top++; pc++;
+                {
+                    size_t addr_len = sizeof(msg->recipient.bytes);
+                    memcpy(*(stack+stack_top)+WORD_SIZE-addr_len, msg->recipient.bytes, addr_len);
+                }
+                break;
+            case OP_BALANCE:
+                pop1(a);
+                {
+                    evmc_address *addr = (evmc_address*) malloc(sizeof(evmc_address));
+                    memcpy(addr->bytes, stack[stack_top]+WORD_SIZE-sizeof(addr->bytes), sizeof(addr->bytes));                    
+                    evmc_uint256be balance = (*(host->get_balance))(context, addr);
+                    free(addr);
+                    memcpy(stack+stack_top, balance.bytes, WORD_SIZE);
+                }
+            case OP_ORIGIN:
+                stack_top++; pc++;
+                {
+                    struct evmc_tx_context tx_context = (*(host->get_tx_context))(context);
+                    size_t origin_len = sizeof(tx_context.tx_origin.bytes);
+                    memcpy(*(stack+stack_top)+WORD_SIZE-origin_len, tx_context.tx_origin.bytes, origin_len);
+                }
+                break;
+            case OP_CALLER:
+                stack_top++; pc++;
+                {
+                    size_t addr_len = sizeof(msg->sender.bytes);
+                    memcpy(*(stack+stack_top)+WORD_SIZE-addr_len, msg->sender.bytes, addr_len);
+                }
+                break;
+            case OP_CALLVALUE:
+                stack_top++; pc++;
+                memcpy(stack+stack_top, msg->value.bytes, WORD_SIZE);
+                break;
+            case OP_CALLDATALOAD:
+                pop1(a);
+                {
+                    size_t i = to_uint64(a);
+                    memcpy(stack+stack_top, msg->input_data+i, WORD_SIZE);
+                }
+                break;
+            case OP_CALLDATASIZE:
+                stack_top++; pc++;
+                memcpy(*(stack+stack_top)+WORD_SIZE-sizeof(size_t), &(msg->input_size), sizeof(size_t));
+                break;
+            case OP_CALLDATACOPY:
+                pop3(a, b, c); stack_top--;
+                {
+                    size_t dest_offset = to_uint64(a);
+                    size_t offset = to_uint64(b);
+                    size_t length = to_uint64(c);
+                    if (dest_offset+(length*WORD_SIZE) > mem_size) {
+                        size_t old_mem_size = mem_size;
+                        mem_size = dest_offset+(length*WORD_SIZE);
+                        memory = (unsigned char*) realloc(memory, mem_size);
+                        memset(memory+old_mem_size, 0, mem_size-old_mem_size);
+                    }
+                    memcpy(memory+dest_offset, msg->input_data+offset, length);
+                }
+                break;
+            case OP_CODESIZE:
+                stack_top++; pc++;
+                memcpy(*(stack+stack_top)+WORD_SIZE-sizeof(size_t), &code_size, sizeof(size_t));
+                break;
+            case OP_CODECOPY:
+                pop3(a, b, c); stack_top--;
+                {
+                    size_t dest_offset = to_uint64(a);
+                    size_t offset = to_uint64(b);
+                    size_t length = to_uint64(c);
+                    if (dest_offset+(length*WORD_SIZE) > mem_size) {
+                        size_t old_mem_size = mem_size;
+                        mem_size = dest_offset+(length*WORD_SIZE);
+                        memory = (unsigned char*) realloc(memory, mem_size);
+                        memset(memory+old_mem_size, 0, mem_size-old_mem_size);
+                    }
+                    memcpy(memory+dest_offset, code+offset, length);
+                }
+                break;
+            case OP_GASPRICE:
+                stack_top++; pc++;
+                {
+                    struct evmc_tx_context tx_context = (*(host->get_tx_context))(context);
+                    print_word(tx_context.tx_gas_price.bytes);
+                    memcpy(stack+stack_top, tx_context.tx_gas_price.bytes, WORD_SIZE);
+                }
+                break;
             case OP_POP:
                 stack_top--; pc++;
                 break;
@@ -308,11 +402,19 @@ struct evmc_result execute(struct evmc_vm* instance,
                 break;
             case OP_SLOAD:
                 pop1(a); stack_top--;
-                printf("SLOAD not implemented");
+                printf("SLOAD not implemented\n");
                 break;
             case OP_SSTORE:
-                pc++;
-                printf("SSTORE not implemented");
+                pop2(a, b); stack_top--;
+                {
+                    evmc_address *addr = (evmc_address*) malloc(sizeof(evmc_address));
+                    memcpy(addr, msg->recipient.bytes, sizeof(evmc_address));
+                    struct evmc_bytes32* key = (struct evmc_bytes32*) malloc(sizeof(struct evmc_bytes32));
+                    struct evmc_bytes32* val = (struct evmc_bytes32*) malloc(sizeof(struct evmc_bytes32));
+                    memcpy(key->bytes, a, sizeof(key->bytes));
+                    memcpy(val->bytes, b, sizeof(key->bytes));
+                    host->set_storage(context, addr, key, val);
+                }
                 break;
             case OP_PUSH0:
             case OP_PUSH1:
@@ -410,24 +512,28 @@ struct evmc_result execute(struct evmc_vm* instance,
                     pc++;   
                 }
                 break;
+            case OP_CREATE:
+                pop3(a, b, c);
+                {
+                    
+                }
             case OP_RETURN:
                 {
                     pc = code_size;
                     size_t offset = to_uint64(stack[stack_top]);
                     size_t length = stack[stack_top-1][WORD_SIZE-1];
-                    result->output_data = (uint8_t*) malloc(length);
+                    result.output_data = (uint8_t*) malloc(length);
                     stack_top-=2;
-                    memcpy((uint8_t*) result->output_data, memory+offset, length);
-                    result->status_code = EVMC_SUCCESS;
-                    result->output_size = length;
-                    result->release = NULL;
+                    memcpy((uint8_t*) result.output_data, memory+offset, length);
+                    result.output_size = length;
                 }
                 break;
             default:
-                printf("opcode %02x not implmented", op);
+                printf("opcode %02x not implmented\n", op);
+                pc = code_size;
         }
     }
-    return *result;
+    return result;
 }
 
 evmc_capabilities_flagset get_capabilities(struct evmc_vm* evm)
@@ -438,7 +544,7 @@ evmc_capabilities_flagset get_capabilities(struct evmc_vm* evm)
 EVMC_EXPORT struct evmc_vm* evmc_create()
 {
     shoe_vm = (struct evmc_vm*) malloc(sizeof(struct evmc_vm));
-    *((int *) &(shoe_vm->abi_version)) = EVMC_ABI_VERSION;
+    *((int *) &(shoe_vm->abi_version)) = 7;
     shoe_vm->name = "shoe_evm";
     shoe_vm->version = "0.0.0";
     shoe_vm->destroy = &destroy;

@@ -3,3 +3,4 @@ test
 *.so
 evmc*
 /build
+/.vscode

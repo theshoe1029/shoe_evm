@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Wno-unused-function -fPIC
+CFLAGS := -Wall -Wno-unused-function -Wno-missing-braces -fPIC
 OBJDIR := ./build
 OBJS := $(addprefix $(OBJDIR)/, evm.o keccak256.o)
 TEST_OBJS := $(addprefix $(OBJDIR)/, keccak256_test.o)
@@ -10,9 +10,9 @@ all: clean $(OBJS)
 	$(CC) $(CFLAGS) -I $(INCLUDES) $(OBJS) -shared -o libshoe-evm.so
 	
 test: all $(TEST_OBJS)
-	$(CC) $(CFLAGS) -I $(TEST_INCLUDES) $(OBJS) $(TEST_OBJS) test.c -o test && ./test
+	$(CC) $(CFLAGS) -I $(TEST_INCLUDES) $(OBJS) $(TEST_OBJS) tst/test.c -o test && ./test
 
-$(OBJDIR)/%.o: src/%.c
+$(OBJDIR)/%.o: %.c
 	$(CC) $(CFLAGS) -I $(INCLUDES) -c $< -o $@
 
 $(OBJDIR)/%.o: tst/%.c

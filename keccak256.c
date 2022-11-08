@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "keccak256.h"
+#include "include/keccak256.h"
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -122,7 +122,7 @@ unsigned char* keccak_256(size_t input_byte_len, unsigned char* input)
     // rate (1088) and capacity (512) sum to 1600 for Keccak-f(1600)
     unsigned int rate = 1088; unsigned int rate_in_bytes = rate / 8;
     // capacity 512 for 256 bit output
-    unsigned int capacity = 512;
+    // unsigned int capacity = 512;
     // 0x01 so we use default padding
     char d = 0x01;
 
