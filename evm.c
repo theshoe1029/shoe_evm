@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "include/evm.h"
+#include "include/fee_schedule.h"
 #include "include/keccak256.h"
 
 void destroy(struct evmc_vm *vm)
@@ -68,6 +69,7 @@ struct evmc_result execute(struct evmc_vm* instance,
     while (pc < code_size) {
         unsigned char a[WORD_SIZE], b[WORD_SIZE], c[WORD_SIZE], d[WORD_SIZE];
         uint8_t op = code[pc];
+        result.gas_left -= get_gas_fee(op);
         switch(op) {
             case OP_STOP:
                 pc = code_size;
@@ -544,7 +546,7 @@ evmc_capabilities_flagset get_capabilities(struct evmc_vm* evm)
 EVMC_EXPORT struct evmc_vm* evmc_create()
 {
     shoe_vm = (struct evmc_vm*) malloc(sizeof(struct evmc_vm));
-    *((int *) &(shoe_vm->abi_version)) = 7;
+    *((int *) &(shoe_vm->abi_version)) = EVMC_ABI_VERSION;
     shoe_vm->name = "shoe_evm";
     shoe_vm->version = "0.0.0";
     shoe_vm->destroy = &destroy;
